@@ -6,10 +6,8 @@ from datetime import datetime
 from models.sqlite_model import Item, Base
 
 
-# Определяем путь к текущему каталогу, где находится файл Python.
-current_directory = os.path.dirname(os.path.abspath(__file__))
-
 # Создаем путь к файлу базы данных в текущем каталоге.
+current_directory = os.path.dirname(os.path.abspath(__file__))
 database_file = os.path.join(current_directory, "mydatabase.db")
 
 # Удаляем файл базы данных, если он существует.
@@ -20,14 +18,12 @@ if os.path.exists(database_file):
 DATABASE_URL = f"sqlite:///{database_file}"
 engine = create_engine(DATABASE_URL)
 
-# Создаем таблицы в базе данных.
 Base.metadata.create_all(bind=engine)
 
-# Создаем сессию для взаимодействия с базой данных.
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 session = SessionLocal()
 
-# Заполняем базу данных данными.
+# Заполняем БД данными.
 data_to_insert = [
     {"date": datetime(2023, 1, 15), "is_active": False, "is_deleted": False},
     {"date": datetime(2023, 3, 23), "is_active": False, "is_deleted": True},

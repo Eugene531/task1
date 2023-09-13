@@ -17,16 +17,13 @@ SECRET_KEY = "MY_SECRET_KEY"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Определяем схему аутентификации OAuth2
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# Функция для создания сессии базы данных
+# Подключаемся к БД "db_name" при помощи фабрики (тк Depends ожидает ссылку).
 def get_db(db_name):
     def get_db_data():
-        # Определяем путь к текущему каталогу, где находится файл Python.
-        current_directory = os.path.dirname(os.path.abspath(__file__))
-
         # Создаем путь к файлу базы данных в текущем каталоге.
+        current_directory = os.path.dirname(os.path.abspath(__file__))
         database_file = os.path.join(current_directory, db_name)
 
         DATABASE_URL = f"sqlite:///{database_file}"
@@ -39,7 +36,7 @@ def get_db(db_name):
             db.close()
     return get_db_data
 
-# Функция для регистрации
+# Функция для регистрации пользователя.
 def user_registration(username: str, password: str, db: Session):
     hashed_password = bcrypt.hash(password)
     db_user = UserDB(username=username, password=hashed_password)
@@ -47,27 +44,27 @@ def user_registration(username: str, password: str, db: Session):
     db.commit()
     db.refresh(db_user)
 
-# Маршрут для регистрации пользователя
+# Маршрут для регистрации пользователя.
 @app.post("/register")
 def register(username: str, password: str, db: Session = Depends(get_db('users_db.db'))):
     user_registration(username, password, db)
     return {'Succesfull': f'User {username} registrated'}
     
-# Функция для аутентификации
+# Функция для аутентификации.
 def authenticate_user(db: Session, username: str, password: str):
     user = db.query(UserDB).filter(UserDB.username == username).first()
     if not user or not bcrypt.verify(password, user.password):
         return None
     return user
 
-# Маршрут для аутентификации и выдачи токена
+# Маршрут для аутентификации и выдачи токена.
 @app.post("/token")
 async def login_for_access_token(username: str, password: str, db: Session = Depends(get_db('users_db.db'))):
     user = authenticate_user(db, username, password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     
-    # Генерация токена
+    # Генерация токена.
     access_token_expires = timedelta(minutes=30)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
@@ -75,7 +72,7 @@ async def login_for_access_token(username: str, password: str, db: Session = Dep
     
     return {"access_token": access_token, "token_type": "bearer"}
 
-# Функция для создания токена
+# Функция для создания токена.
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if expires_delta:
@@ -86,7 +83,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-# Функция для получения текущего пользователя
+# Функция для проверки текущего пользователя.
 def get_current_user(token: str = Security(oauth2_scheme), db: Session = Depends(get_db('users_db.db'))):
     credentials_exception = HTTPException(
         status_code=401,
@@ -105,7 +102,7 @@ def get_current_user(token: str = Security(oauth2_scheme), db: Session = Depends
         raise credentials_exception
     return user
 
-# Маршрут для получения данных за указанный период
+# Маршрут для получения данных за указанный период.
 @app.get("/get_data")
 async def get_data(
     date_from: datetime,

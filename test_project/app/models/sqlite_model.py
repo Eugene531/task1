@@ -3,7 +3,7 @@ from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 
-# Определяем модель данных.
+# Модель данных для sqlite БД.
 class Item(Base):
     __tablename__ = "items"
     id = Column(Integer, primary_key=True, index=True)
